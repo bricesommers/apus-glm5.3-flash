@@ -1,0 +1,157 @@
+# .github/workflows/ci.yml — apus CI: full portable test battery.
+#
+# Triggers: every push to `main` (the public snapshot branch is pushed
+# AS main) plus manual workflow_dispatch.
+#
+# Jobs:
+#   linux  — ubuntu-latest (x86_64, gcc): engine build + the full portable
+#            battery. This is the same target list tools/docker/test-linux.sh
+#            proved green in M12a-1, run here on native x86_64 instead of
+#            under Rosetta/QEMU emulation (minutes, not ~10 min).
+#   macos  — macos-latest (Apple Silicon, clang/NEON): same battery, plus
+#            the Metal GPU suite (test-m7b), which is macOS-only BY DESIGN
+#            (the Makefile guards the Metal targets with `ifeq (Darwin)`).
+#   windows — windows-latest (x86_64, MinGW-w64 gcc via MSYS2 UCRT64):
+#            the M15 Windows port. Same battery, minus ubsan-* (MinGW has
+#            no sanitizer runtimes) and test-m7b (Metal is macOS-only).
+#            Fixtures regenerate on-runner via a NATIVE Windows Python
+#            (setup-python; wheels install cleanly), invoked from the
+#            msys2 shell through the inherited Windows PATH.
+#
+# PY=python3 everywhere: the Makefile defaults to the local dev venv
+# (.venv/bin/python), which does not exist on a fresh runner.
+#
+# Fixture/golden dirs (tests/*/fixtures, tests/*/golden, etc.) are NOT in
+# the repo — the make targets regenerate them deterministically via the
+# golden-* dependencies, exactly like tools/docker/test-linux.sh does.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  # The GLM-only portable battery (tools/docker/test-linux.sh default
+  # list; the V4 suites were removed 2026-09-05 with the V4 engine
+  # cleanup). test-m7b is macOS-only and runs in the macos job instead.
+  BATTERY: >-
+    test-m2 test-m3g test-m4g test-m4h test-m5g test-m6g test-m7a
+    test-m8g
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install toolchain and Python deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc make python3 python3-pip
+          # ubuntu 24.04 marks the system Python externally-managed; a
+          # throwaway CI runner is exactly the --break-system-packages case
+          # (same policy as tools/docker/Dockerfile.dev).
+          pip3 install --break-system-packages \
+            "numpy>=1.26" "safetensors>=0.4" "tokenizers>=0.19" "jinja2>=3.1"
+
+      - name: Build the engine
+        run: make -s apus
+
+      - name: Portable battery (make targets)
+        run: |
+          set -e
+          for t in $BATTERY; do
+            echo "=== $t ==="
+            make -s PY=python3 "$t"
+          done
+
+      - name: Python suites (m1 converter)
+        run: |
+          python3 -m unittest discover -s tests/m1
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+
+      # Homebrew Python on macos-latest is PEP-668 externally-managed:
+      # system pip is refused, so use a venv for the whole job.
+      - name: Install Python deps
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install "numpy>=1.26" "safetensors>=0.4" "tokenizers>=0.19" "jinja2>=3.1"
+
+      - name: Build the engine
+        run: make -s apus
+
+      - name: Portable battery (make targets)
+        run: |
+          set -e
+          for t in $BATTERY; do
+            echo "=== $t ==="
+            make -s PY=.venv/bin/python "$t"
+          done
+
+      - name: Python suites (m1 converter)
+        run: |
+          .venv/bin/python -m unittest discover -s tests/m1
+
+      - name: Metal GPU suite (macOS-only)
+        run: make -s PY=.venv/bin/python metal=1 test-m7b
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      # Windows Python defaults to the cp1252 locale; the oracles/tools
+      # read UTF-8 JSON (tokenizer.json, conformance pairs). UTF-8 mode
+      # is the blanket fix (chat.py/server.py also pin utf-8 explicitly).
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          # update:false — a full MSYS2 system upgrade kills its own shell
+          # mid-run on GH runners ("Killing remaining tasks") and is flaky;
+          # we only need a pacman db sync, done in the next step.
+          update: false
+          path-type: inherit   # keep the Windows PATH (native python below)
+
+      - name: Install MinGW toolchain
+        shell: msys2 {0}
+        # 2026 MSYS2 naming: arch-qualified (ucrt-x86_64, not ucrt64).
+        run: pacman -Sy --noconfirm --needed mingw-w64-ucrt-x86_64-gcc make
+
+      # Native Windows Python: pip wheels install cleanly (the MSYS2/mingw
+      # Python reports a platform tag wheels don't match). Used for the
+      # fixture-generating oracles via PY=python.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: pip install "numpy>=1.26" "safetensors>=0.4" "tokenizers>=0.19" "jinja2>=3.1"
+
+      - name: Build the engine (MinGW-w64)
+        shell: msys2 {0}
+        run: make -s apus
+
+      - name: Portable battery (make targets)
+        shell: msys2 {0}
+        run: |
+          set -e
+          for t in $BATTERY; do
+            echo "=== $t ==="
+            make -s PY=python "$t"
+          done
+
+      - name: Python suites (m1 converter)
+        shell: msys2 {0}
+        run: |
+          python -m unittest discover -s tests/m1

@@ -1,0 +1,7 @@
+=== non-spec ===
+non-spec exit 0
+=== spec k=2 ===
+spec exit 0
+=== diff token streams ===
+STREAMS IDENTICAL
+=== spec stats ===

@@ -1,0 +1,46 @@
+apus — third-party notices
+==========================
+
+apus incorporates design and code from the following third-party projects.
+Each remains the property of its own copyright holders and is used under
+its own license.
+
+colibri
+-------
+
+apus's tiered expert-store design (NVMe slab store, bounded RAM cache with
+eviction pins, RSS guard) and the router-lookahead prefetch "pilot"
+follow the design of, and adapt code from, colibri:
+
+    https://github.com/JustVugg/colibri
+
+colibri is licensed under the Apache License, Version 2.0. The full
+license text is reproduced in LICENSE.apache-2.0 in this repository.
+Adapted files carry per-file attribution headers.
+
+Z.AI
+----
+
+The GLM-5.3-Flash model weights are made available by Z.AI under the MIT
+License. They are NOT part of this repository: tools/download.py fetches
+them from Hugging Face (zai-org/GLM-5.3-Flash).
+
+Z.AI's reference materials — the model config, tokenizer, chat template,
+and generation config — ARE included under `reference/` (the test battery
+verifies against them), under the MIT License; see `reference/LICENSE.zai`
+(the license text verbatim from the model's Hugging Face repo). apus's
+tokenizer and message encoding were validated byte-exactly against these
+reference files.
+
+HuggingFace
+-----------
+
+`reference/inference/modeling_glm5_next.py` and
+`reference/inference/modular_glm5_next.py` are verbatim copies of the
+HuggingFace transformers reference implementation for `glm5_next` — the
+normative source for every numerics gate in this repository. They are
+licensed under the Apache License, Version 2.0 (per-file headers; the
+license text is reproduced in LICENSE.apache-2.0).
+
+apus is an independent project and is not affiliated with, endorsed by,
+or sponsored by Z.AI, the colibri project, or HuggingFace.

@@ -1,0 +1,5 @@
+apus: loaded weights/glm-5.3-flash (glm5_next, 45 layers, dim 4096, vocab 154880, tiered) in 6.69s
+apus: spec: 8 emitted in 8 batches (1.00 tok/batch, 8 re-fed), draft accept 0/8 (0.0%), d1 0/8
+apus: pilot: 336 predictions (1974 prefill), 4032 hints (12229 prefill), recall 1852/2688
+apus: expert cache: 415 hits 13457 misses (16878 preads, 405170.9 MB; 6447 hint-loads 10431 demand-loads 9463 spec-dropped), 7463 evictions, 0 rss drops, peak footprint 22.52 GiB
+apus: prefill 31 tok in 91.76s (0.3 tok/s); decode 8 tok in 214.43s (0.04 tok/s)
