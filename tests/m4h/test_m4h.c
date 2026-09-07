@@ -344,6 +344,10 @@ static void test_kda(const char *dir, const char *man) {
         size_t calls = (size_t)man_long(man, key);
         snprintf(key, sizeof key, "k%ld_npre", c);
         size_t npre = (size_t)man_long(man, key);
+        printf("kda case k%ld: %zu calls (%zu prefill)\n", c, calls, npre);
+        fflush(stdout);   /* CI progress: stdout is block-buffered under
+                             pipes/redirects — flush so a hang bisects to
+                             the case (M15y, the windows-latest m4h hang) */
 
         ApusGkdaState st;
         st.conv_state = calloc(3 * qkv * (APUS_GKDA_CONV_K - 1),
@@ -486,13 +490,17 @@ static void load_dsa_weights(const char *dir) {
     dsaW.idx_gate = load_u16(dir, "dsa_idx_gate", ID * DIM);
 }
 
-/* parse the fragile list "9,11,..." or "-" into a bool array [s] */
+/* parse the fragile list "9,11,..." or "-" into a bool array [s].
+ * '\r' terminates too: a CRLF manifest (a text-mode Python write on
+ * Windows) otherwise leaves p on '\r' after the last number, strtol
+ * performs no conversion, p never advances — an infinite loop (the
+ * 2026-09-06 windows-latest CI hang). The generators also pin LF. */
 static unsigned char *parse_fragile(const char *man, const char *key,
                                     size_t s) {
     unsigned char *fr = calloc(s ? s : 1, 1);
     const char *p = man_find(man, key);
     if (*p == '-') return fr;
-    while (*p && *p != '\n') {
+    while (*p && *p != '\n' && *p != '\r') {
         long t = strtol(p, (char **)&p, 10);
         if (t >= 0 && (size_t)t < s) fr[t] = 1;
         if (*p == ',') p++;
@@ -509,6 +517,8 @@ static void test_dsa(const char *dir, const char *man) {
         size_t calls = (size_t)man_long(man, key);
         snprintf(key, sizeof key, "d%ld_n", c);
         size_t cap = (size_t)man_long(man, key);
+        printf("dsa case d%ld: %zu calls (cap %zu)\n", c, calls, cap);
+        fflush(stdout);   /* CI progress (see the kda-case note above) */
 
         ApusGdsaState st;
         st.k_cache = calloc(H * cap * qd, sizeof(uint16_t));
@@ -686,6 +696,8 @@ int main(void) {
     run_probe(dir, man);
     load_kda_weights(dir);
     load_dsa_weights(dir);
+    printf("m4h: weights loaded\n");
+    fflush(stdout);
     test_kda(dir, man);
     test_dsa(dir, man);
 

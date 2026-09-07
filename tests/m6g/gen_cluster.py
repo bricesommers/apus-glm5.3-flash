@@ -162,7 +162,7 @@ def main():
     with open(os.path.join(OUT, "cluster_config.json"), "w") as f:
         json.dump({k: v for k, v in cfg.items()}, f, indent=1)
 
-    with open(os.path.join(OUT, "cluster_manifest.txt"), "w") as f:
+    with open(os.path.join(OUT, "cluster_manifest.txt"), "w", newline="") as f:
         f.write("\n".join([
             f"seed={SEED}",
             f"cfg_L={cfg['num_hidden_layers']}",

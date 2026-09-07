@@ -25,20 +25,18 @@
 # the repo — the make targets regenerate them deterministically via the
 # golden-* dependencies, exactly like tools/docker/test-linux.sh does.
 
+# The battery runs ONE STEP PER TARGET (M15y — a single loop step hid the
+# 2026-09-06 windows m4h hang for 88 min behind one step name and threw
+# away the earlier targets' results; per-target steps localize a hang and
+# keep the green targets visible). The list mirrors the
+# tools/docker/test-linux.sh default battery.
+
 name: CI
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-env:
-  # The GLM-only portable battery (tools/docker/test-linux.sh default
-  # list; the V4 suites were removed 2026-09-05 with the V4 engine
-  # cleanup). test-m7b is macOS-only and runs in the macos job instead.
-  BATTERY: >-
-    test-m2 test-m3g test-m4g test-m4h test-m5g test-m6g test-m7a
-    test-m8g
 
 jobs:
   linux:
@@ -60,13 +58,29 @@ jobs:
       - name: Build the engine
         run: make -s apus
 
-      - name: Portable battery (make targets)
-        run: |
-          set -e
-          for t in $BATTERY; do
-            echo "=== $t ==="
-            make -s PY=python3 "$t"
-          done
+      - name: "Battery: test-m2"
+        run: make -s PY=python3 test-m2
+
+      - name: "Battery: test-m3g"
+        run: make -s PY=python3 test-m3g
+
+      - name: "Battery: test-m4g"
+        run: make -s PY=python3 test-m4g
+
+      - name: "Battery: test-m4h"
+        run: make -s PY=python3 test-m4h
+
+      - name: "Battery: test-m5g"
+        run: make -s PY=python3 test-m5g
+
+      - name: "Battery: test-m6g"
+        run: make -s PY=python3 test-m6g
+
+      - name: "Battery: test-m7a"
+        run: make -s PY=python3 test-m7a
+
+      - name: "Battery: test-m8g"
+        run: make -s PY=python3 test-m8g
 
       - name: Python suites (m1 converter)
         run: |
@@ -88,13 +102,29 @@ jobs:
       - name: Build the engine
         run: make -s apus
 
-      - name: Portable battery (make targets)
-        run: |
-          set -e
-          for t in $BATTERY; do
-            echo "=== $t ==="
-            make -s PY=.venv/bin/python "$t"
-          done
+      - name: "Battery: test-m2"
+        run: make -s PY=.venv/bin/python test-m2
+
+      - name: "Battery: test-m3g"
+        run: make -s PY=.venv/bin/python test-m3g
+
+      - name: "Battery: test-m4g"
+        run: make -s PY=.venv/bin/python test-m4g
+
+      - name: "Battery: test-m4h"
+        run: make -s PY=.venv/bin/python test-m4h
+
+      - name: "Battery: test-m5g"
+        run: make -s PY=.venv/bin/python test-m5g
+
+      - name: "Battery: test-m6g"
+        run: make -s PY=.venv/bin/python test-m6g
+
+      - name: "Battery: test-m7a"
+        run: make -s PY=.venv/bin/python test-m7a
+
+      - name: "Battery: test-m8g"
+        run: make -s PY=.venv/bin/python test-m8g
 
       - name: Python suites (m1 converter)
         run: |
@@ -142,14 +172,37 @@ jobs:
         shell: msys2 {0}
         run: make -s apus
 
-      - name: Portable battery (make targets)
+      - name: "Battery: test-m2"
         shell: msys2 {0}
-        run: |
-          set -e
-          for t in $BATTERY; do
-            echo "=== $t ==="
-            make -s PY=python "$t"
-          done
+        run: make -s PY=python test-m2
+
+      - name: "Battery: test-m3g"
+        shell: msys2 {0}
+        run: make -s PY=python test-m3g
+
+      - name: "Battery: test-m4g"
+        shell: msys2 {0}
+        run: make -s PY=python test-m4g
+
+      - name: "Battery: test-m4h"
+        shell: msys2 {0}
+        run: make -s PY=python test-m4h
+
+      - name: "Battery: test-m5g"
+        shell: msys2 {0}
+        run: make -s PY=python test-m5g
+
+      - name: "Battery: test-m6g"
+        shell: msys2 {0}
+        run: make -s PY=python test-m6g
+
+      - name: "Battery: test-m7a"
+        shell: msys2 {0}
+        run: make -s PY=python test-m7a
+
+      - name: "Battery: test-m8g"
+        shell: msys2 {0}
+        run: make -s PY=python test-m8g
 
       - name: Python suites (m1 converter)
         shell: msys2 {0}

@@ -355,7 +355,7 @@ def main():
                  f"chain_depth={CHAIN_DEPTH}"]
         for k, v in manifest["config"].items():
             lines.append(f"cfg_{k}={v}")
-        with open(os.path.join(case_dir, "manifest.txt"), "w") as f:
+        with open(os.path.join(case_dir, "manifest.txt"), "w", newline="") as f:
             f.write("\n".join(lines) + "\n")
         print(f"  {case}: L={L} ({layer_types}), prefill {PREFILL_LEN} + "
               f"{DECODE_STEPS} decode, replay {s}, chain {CHAIN_DEPTH} -> "

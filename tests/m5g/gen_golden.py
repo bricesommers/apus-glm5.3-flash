@@ -352,7 +352,7 @@ def main():
             lines.append(f"cfg_{k}={v}")
     for k, v in fragile.items():
         lines.append(f"fragile_{k}={v}")
-    with open(os.path.join(OUT, "manifest.txt"), "w") as f:
+    with open(os.path.join(OUT, "manifest.txt"), "w", newline="") as f:
         f.write("\n".join(lines) + "\n")
     print(f"m5g goldens: {L} layers (KDA {kda_layers}, DSA {dsa_layers}, "
           f"MoE {moe_layers}), prefill {PREFILL_LEN} + {DECODE_STEPS} "

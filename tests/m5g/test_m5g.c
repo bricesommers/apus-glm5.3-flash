@@ -92,11 +92,15 @@ static long man_long(const char *man, const char *key) {
     return strtol(man_find(man, key), NULL, 10);
 }
 
-/* comma list -> int array (returns count) */
+/* comma list -> int array (returns count). '\r' terminates too — a CRLF
+ * manifest (text-mode Python write on Windows) would otherwise strand p
+ * on '\r' with strtol performing no conversion: an infinite loop (same
+ * class as the 2026-09-06 windows-latest m4h hang; m5g was next in the
+ * battery). The generators also pin LF. */
 static int man_list(const char *man, const char *key, int *out, int cap) {
     const char *p = man_find(man, key);
     int n = 0;
-    while (*p && *p != '\n' && n < cap) {
+    while (*p && *p != '\n' && *p != '\r' && n < cap) {
         out[n++] = (int)strtol(p, (char **)&p, 10);
         if (*p == ',') p++;
     }

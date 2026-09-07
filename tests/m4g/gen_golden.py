@@ -432,7 +432,11 @@ def main():
                 lines.append(f"{prefix}{i}_{k}={v}")
     for name, dg in DIGESTS.items():
         lines.append(f"dg_{name}={dg}")
-    with open(os.path.join(OUT, "manifest.txt"), "w") as f:
+    # newline="" pins LF: native-Windows Python text mode would otherwise
+    # write CRLF, and the C manifest parsers read with "rb" (the M15 m2
+    # generator convention; the 2026-09-06 m4h CI hang was a CRLF list
+    # parse — fixed C-side too, but the goldens stay byte-identical).
+    with open(os.path.join(OUT, "manifest.txt"), "w", newline="") as f:
         f.write("\n".join(lines) + "\n")
     print(f"m4g goldens: {sum(len(v) for k, v in manifest.items()
                              if isinstance(v, list))} cases -> {OUT}")

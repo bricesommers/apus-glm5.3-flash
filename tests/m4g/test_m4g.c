@@ -642,12 +642,20 @@ int main(void) {
     char *man = (char *)read_file(mpath, &mlen);
 
     run_probe(dir, man);
+    /* Per-suite progress + fflush: stdout is block-buffered under CI
+     * pipes/redirects; without the flush a hang prints nothing (M15y). */
     test_mhc(dir, man);
+    printf("m4g: mhc done\n");    fflush(stdout);
     test_expand(dir, man);
+    printf("m4g: expand done\n"); fflush(stdout);
     test_head(dir, man);
+    printf("m4g: head done\n");   fflush(stdout);
     test_router(dir, man);
+    printf("m4g: router done\n"); fflush(stdout);
     test_expert(dir, man);
+    printf("m4g: expert done\n"); fflush(stdout);
     test_moe(dir, man);
+    printf("m4g: moe done\n");    fflush(stdout);
 
     printf("digest: %016llx\n", (unsigned long long)dg_state);
     printf("%s: %d checks, %d failures\n",

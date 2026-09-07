@@ -398,7 +398,12 @@ def main():
             lines.append(f"d{i}_crafted={c['crafted']}")
     for name, dg in DIGESTS.items():
         lines.append(f"dg_{name}={dg}")
-    with open(os.path.join(OUT, "manifest.txt"), "w") as f:
+    # newline="" pins LF: native-Windows Python text mode would otherwise
+    # write CRLF, and test_m4h.c reads the manifest with "rb" — the CRLF
+    # left parse_fragile stranded on '\r' (strtol no-conversion, no p
+    # advance): the 2026-09-06 windows-latest 88-min CI hang. (The C
+    # parser is hardened too; the m2 generator has pinned LF since M15.)
+    with open(os.path.join(OUT, "manifest.txt"), "w", newline="") as f:
         f.write("\n".join(lines) + "\n")
     print(f"m4h goldens: {len(manifest['kda'])} KDA + "
           f"{len(manifest['dsa'])} DSA cases -> {OUT}")
